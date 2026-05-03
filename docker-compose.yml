@@ -8,8 +8,6 @@ services:
       - STUDENT_ID=${STUDENT_ID:-unknown}
       - LAB_NUMBER=13
     volumes:
-      - ./:/app/workspace      # Исходный код и логи
-      - ./output:/app/output   # Папка для результатов (пробрасывается на хост)
+      - ./:/app/workspace  # Пробрасываем ВЕСЬ репозиторий в контейнер
     working_dir: /app/workspace
     command: python3 analysis.py
-    # Контейнер завершится сам после выполнения скрипта

@@ -1,7 +1,15 @@
 version: '3.8'
+
 services:
-  analyzer:
+  lab-analysis:
     build: .
+    container_name: lab13-analysis
+    environment:
+      - STUDENT_ID=${STUDENT_ID:-unknown}
+      - LAB_NUMBER=13
     volumes:
-      - .:/app
-    working_dir: /app
+      - ./:/app/workspace      # Исходный код и логи
+      - ./output:/app/output   # Папка для результатов (пробрасывается на хост)
+    working_dir: /app/workspace
+    command: python3 analysis.py
+    # Контейнер завершится сам после выполнения скрипта

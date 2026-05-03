@@ -1,6 +1,39 @@
-venv/
+# Python
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# 🔧 Docker & Lab 13 outputs
+# Игнорировать все PNG, КРОМЕ наших артефактов
 *.png
-*.jpg
-.env
+!traject_*.png
+!env_check_*.png
+!mission_*.png
+!docker_proof_*.png
+
+# Игнорировать все JSON, КРОМЕ манифеста и заданий
+*.json
+!execution_manifest.json
+!student_tasks_*.json
+!tasks_database.json
+
+# Остальное
 .DS_Store
+Thumbs.db

@@ -1,42 +1,72 @@
+import os
 import json
-import pandas as pd
+import matplotlib
+matplotlib.use('Agg')  # 🔥 Обязательно для Docker (без GUI)
 import matplotlib.pyplot as plt
+from datetime import datetime
 
-# 1. Загрузка данных
-with open("log_001.json") as f:
-    data = json.load(f)
+def create_manifest():
+    """Создаёт цифровую подпись выполнения"""
+    is_docker = os.path.exists('/.dockerenv')
+    manifest = {
+        "timestamp": datetime.utcnow().isoformat(),
+        "hostname": os.uname().nodename,
+        "container": f"lab-13-{os.getenv('STUDENT_ID', 'unknown')}",
+        "env": "docker" if is_docker else "local",
+        "student_id": os.getenv('STUDENT_ID', 'unknown'),
+        "lab_number": os.getenv('LAB_NUMBER', '13')
+    }
+    
+    os.makedirs('/app/output', exist_ok=True)
+    with open('/app/output/execution_manifest.json', 'w', encoding='utf-8') as f:
+        json.dump(manifest, f, indent=2)
+    print("✅ Manifest created: /app/output/execution_manifest.json")
 
-# 2. Подготовка данных
-df = pd.DataFrame(data["log"])
-df_move = df[df["event"] == "move"]
-collisions = df[df["event"] == "collision"]
+def generate_trajectory():
+    student_id = os.getenv('STUDENT_ID', 'unknown')
+    pos_file = f'/app/workspace/mission_positions_{student_id}.json'
+    log_file = f'/app/workspace/log_{student_id}.json'
 
-# 3. Аналитика (выводим только итоги в консоль)
-print("Файл загружен успешно")
-print(f"Столкновений: {len(collisions)}")
+    if not os.path.exists(pos_file):
+        print(f"⚠️ Файл позиций не найден: {pos_file}")
+        return
 
-start_time = df["time"].min()
-end_time = df["time"].max()
-print(f"Длительность сессии: {end_time - start_time:.2f} сек.")
+    with open(pos_file, 'r', encoding='utf-8') as f:
+        positions = json.load(f)
 
-# 4. Визуализация
-plt.figure(figsize=(10, 6))  # Задаем размер графика
-plt.plot(df_move["x"], df_move["y"], label="trajectory")
-plt.scatter(collisions["x"], collisions["y"], color="red", label="collisions")
-plt.scatter(df.iloc[0]["x"], df.iloc[0]["y"], color="green", label="start")
-plt.scatter(df.iloc[-1]["x"], df.iloc[-1]["y"], color="blue", label="end")
+    x = [p.get('x', 0) for p in positions]
+    y = [p.get('y', 0) for p in positions]
 
-# Настройки оформления
-plt.gca().invert_yaxis()  # Инверсия оси Y (важно для игры)
-plt.legend()
-plt.title("Trajectory with collisions")
-plt.grid()
+    plt.figure(figsize=(10, 6))
+    plt.plot(x, y, marker='.', linestyle='-', linewidth=1.5, label='trajectory')
+    plt.scatter([x[0]], [y[0]], c='green', label='start', s=100, zorder=5)
+    plt.scatter([x[-1]], [y[-1]], c='blue', label='end', s=100, zorder=5)
 
-# 5. Сохранение и показ
-# Используем имя из файла лога (или 'unknown', если его нет)
-name = data.get("name", "unknown")
-plt.savefig(f"traject_{name}.png", dpi=150, bbox_inches='tight')
-print(f"✅ График сохранен: traject_{name}.png")
+    # Отметка коллизий из логов
+    if os.path.exists(log_file):
+        with open(log_file, 'r', encoding='utf-8') as f:
+            logs = json.load(f)
+        collisions = [l for l in logs if l.get('type') == 'collision']
+        if collisions:
+            plt.scatter([c.get('x') for c in collisions], 
+                        [c.get('y') for c in collisions], 
+                        c='red', label='collisions', s=80, zorder=4)
 
-plt.show()
-plt.close()  # Корректно закрывает окно после показа
+    plt.title(f'Trajectory with collisions | Student: {student_id}')
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    plt.legend()
+    plt.grid(True, alpha=0.6)
+    plt.tight_layout()
+
+    os.makedirs('/app/output', exist_ok=True)
+    output_path = f'/app/output/traject_{student_id}.png'
+    plt.savefig(output_path, dpi=150)
+    plt.close()
+    print(f"✅ Graph saved: {output_path}")
+
+if __name__ == "__main__":
+    print(f"🚀 Starting analysis for {os.getenv('STUDENT_ID')}...")
+    create_manifest()
+    generate_trajectory()
+    print("✅ Analysis complete. Check /app/output/ on host.")

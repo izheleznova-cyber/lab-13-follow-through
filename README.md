@@ -32,7 +32,7 @@ https://youtu.be/0vqfccIVb5Q
 https://docs.duckietown.com/ente/duckietown-manual/10-setup/setup-devcontainer.html#host-system-container-installation 
 
 
-2. Создайте свой репозиторий из шаблона или клонируйте выданный
+2. клонируйте выданный репозиторий
 3. Запустите генератор индивидуальных заданий:
    ```bash
    python3 task_generator.py

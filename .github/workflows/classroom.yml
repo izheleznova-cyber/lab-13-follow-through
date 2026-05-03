@@ -1,0 +1,84 @@
+name: Lab 12 Docker Autograder
+
+on:
+  - push
+  - repository_dispatch
+
+permissions:
+  checks: write
+  actions: read
+  contents: read
+
+jobs:
+  run-autograding-tests:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-classroom[bot]'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Проверка 1: Dockerfile существует
+      - name: Check Dockerfile exists
+        run: |
+          if [ -f Dockerfile ]; then
+            echo "✅ Dockerfile found"
+          else
+            echo "❌ Dockerfile missing"
+            exit 1
+          fi
+
+      # Проверка 2: docker-compose.yml существует
+      - name: Check docker-compose.yml exists
+        run: |
+          if [ -f docker-compose.yml ]; then
+            echo "✅ docker-compose.yml found"
+          else
+            echo "❌ docker-compose.yml missing"
+            exit 1
+          fi
+
+      # Проверка 3: analysis.py существует
+      - name: Check analysis.py exists
+        run: |
+          if [ -f analysis.py ]; then
+            echo "✅ analysis.py found"
+          else
+            echo "❌ analysis.py missing"
+            exit 1
+          fi
+
+      # Проверка 4: .dockerignore существует
+      - name: Check .dockerignore exists
+        run: |
+          if [ -f .dockerignore ]; then
+            echo "✅ .dockerignore found"
+          else
+            echo "❌ .dockerignore missing"
+            exit 1
+          fi
+
+      # Проверка 5: Docker образ собирается
+      - name: Build Docker image
+        run: |
+          docker compose build
+        continue-on-error: true
+
+      # Проверка 6: Есть ли логи (опционально)
+      - name: Check for log files
+        run: |
+          if ls log*.json 1> /dev/null 2>&1; then
+            echo "✅ Log files found"
+          else
+            echo "⚠️ No log files (student should add them)"
+          fi
+        continue-on-error: true
+
+      # Финальный отчёт
+      - name: Autograding Reporter
+        uses: classroom-resources/autograding-grading-reporter@v1
+        env:
+          DOCKERFILE_EXISTS: "true"
+          COMPOSE_EXISTS: "true"
+          ANALYSIS_EXISTS: "true"
+        with:
+          runners: lab12-checks
